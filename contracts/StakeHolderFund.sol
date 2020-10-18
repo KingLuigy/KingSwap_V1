@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
@@ -31,21 +32,25 @@ contract StakeHolderFund is Ownable {
     // Assume the uint as the Index, will be identical to index in the Array
     mapping(address => uint) public advAddress;
     UserInfo[] public advArray;
+    uint advActiveSize;
 
     // EarlyLP Address.
     mapping(address => uint) public elpAddress;
     ELPInfo[] public elpArray;
-   
+    uint elpActiveSize;
+
     // eTeam Address.
     mapping(address => uint) public eteamAddress;
     UserInfo[] public eteamArray;
+    uint eteamActiveSize;
+
 
     // Company Address.
     address public companyaddr;
 
     // StakeholderFund Timelock address
     address public stakeHolderFundTimelock;
-
+    
     //Default Constructor
     constructor(KingToken _king, 
      ELPInfo[]  memory _elpaddr,
@@ -61,8 +66,11 @@ contract StakeHolderFund is Ownable {
 
         //Initialize userinfo address
         updateUserInfo(_advaddr,advArray);
+        //Set the active size for advisor
+        advActiveSize = advArray.length;
         updateMappingUserInfo(advAddress,_advaddr);
         updateUserInfo(_eteamaddr,eteamArray);
+        eteamActiveSize = eteamArray.length;
         updateMappingUserInfo(eteamAddress,_eteamaddr);
 
         stakeHolderFundTimelock = _stakeHolderFundTimelock;
@@ -74,6 +82,8 @@ contract StakeHolderFund is Ownable {
     //Load the mapping for first few ELP
     function updateELPInfo(ELPInfo[] memory init,ELPInfo[] storage mainArray) internal {
         uint256 length = init.length;
+        //Set the active size for ELP
+        elpActiveSize = length;
         for (uint i = 0 ; i < length; i++){
             address walletAddress = init[i].walletAddress;
             uint index = init[i].index;
@@ -87,9 +97,8 @@ contract StakeHolderFund is Ownable {
 
             //store in array checker address. Index will be -1 to represent the position.
             mainArray.push(e);
-            //emit NewRequest(elpArray.length);
         }
-        //emit NewRequest(elpArray.length);
+        
     }
     function updateMappingELPInfo(mapping(address => uint) storage map,ELPInfo[] memory init) internal{
         // Add all the users into the address
@@ -187,7 +196,7 @@ contract StakeHolderFund is Ownable {
             //only for active advisor wallet address
             if(advArray[i].statusActive == true){
                 //based total advisor in team divide equally
-                uint advFund = amountReal.mul(100).div((advArray.length).mul(3600));
+                uint advFund = amountReal.mul(100).div((advActiveSize).mul(3600));
                 balance = balance.sub(advFund);
                 king.transfer(advArray[i].walletAddress, advFund);
             }
@@ -200,7 +209,7 @@ contract StakeHolderFund is Ownable {
             if(eteamArray[i].statusActive == true){
 
                 //based total team members in team divide equally
-                uint eteamFund = amountReal.mul(250).div((eteamArray.length).mul(3600));
+                uint eteamFund = amountReal.mul(250).div((eteamActiveSize).mul(3600));
                  emit fundRequest(eteamFund);
                 balance = balance.sub(eteamFund);
                 king.transfer(eteamArray[i].walletAddress, eteamFund);
@@ -224,6 +233,7 @@ contract StakeHolderFund is Ownable {
                 walletAddress: _advAddress,
                 index: index,
                 statusActive: true}));
+                advActiveSize = advActiveSize + 1;
         }
     }
 
@@ -239,6 +249,7 @@ contract StakeHolderFund is Ownable {
                 index: index,
                 allocPoint: _point,
                 statusActive : true}));
+                elpActiveSize = elpActiveSize + 1;
         }
     }
 
@@ -253,6 +264,7 @@ contract StakeHolderFund is Ownable {
                 walletAddress: _eteamAddress,
                 index: index,
                 statusActive: true}));
+                eteamActiveSize = eteamActiveSize +1;
         }
     }
 
@@ -265,6 +277,7 @@ contract StakeHolderFund is Ownable {
                     advArray[i].statusActive = false;
                  }
              }
+            advActiveSize = advActiveSize - 1;
          }
     }
 
@@ -276,6 +289,7 @@ contract StakeHolderFund is Ownable {
                     eteamArray[i].statusActive = false;
                  }
              }
+            eteamActiveSize = eteamActiveSize - 1;
          }
     }
 
@@ -287,11 +301,12 @@ contract StakeHolderFund is Ownable {
                     elpArray[i].statusActive = false;
                  }
              }
+             elpActiveSize = elpActiveSize - 1;
          }
     }
 
     function changeStakeHolderFundTimeLock(address _stakeHolderFundTimelock) public onlyOwner{
        stakeHolderFundTimelock = _stakeHolderFundTimelock;
-    }
+    } 
 
 }

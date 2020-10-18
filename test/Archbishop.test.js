@@ -223,9 +223,31 @@ contract('Archbishop', ([alice, bob, carol, stakeholder, minter]) => {
         // });
 
         it('getMultiplier', async () => {
+            this.bishop = await Archbishop.new(this.king.address, stakeholder, '1000', '500', { from: alice });
+            assert.equal((await this.bishop.getMultiplier(500, 700)).valueOf(), '2000');
+            assert.equal((await this.bishop.getMultiplier(700, 701)).valueOf(), '0');
+            await time.advanceBlockTo('700')
+            await this.bishop.changeMintEndBlock(800);
+            assert.equal((await this.bishop.getMultiplier(700, 701)).valueOf(), '1');
+            await expectRevert(this.bishop.changeBonusEndBlock(800, { from: alice}), 'mint end block has not ended');
+            await time.advanceBlockTo('800')
+            await this.bishop.changeBonusEndBlock(820);
+            await this.bishop.changeMintEndBlock(820);
+            assert.equal((await this.bishop.getMultiplier(801, 802)).valueOf(), '10');
+        });
+
+        it('transfer King Token Ownership', async () => {
             this.bishop = await Archbishop.new(this.king.address, stakeholder, '1000', '0', { from: alice });
-            assert.equal((await this.bishop.getMultiplier(0, 64000)).valueOf(), '640000');
-            assert.equal((await this.bishop.getMultiplier(64000, 64001)).valueOf(), '1');
+            await this.king.transferOwnership(this.bishop.address, { from: alice });
+            const king = await this.bishop.king();
+            const stakeholderaddress = await this.bishop.stakeholderaddress();
+            const owner = await this.king.owner();
+            assert.equal(king.valueOf(), this.king.address);
+            assert.equal(stakeholderaddress.valueOf(), stakeholder);
+            assert.equal(owner.valueOf(), this.bishop.address);
+            await this.bishop.transferOwnerShipKingToken(alice, {from: alice});
+            newOwner = await this.king.owner();
+
         });
 
         it('add lp token', async () => {

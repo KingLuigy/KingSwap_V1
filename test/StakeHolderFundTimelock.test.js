@@ -1,36 +1,29 @@
 
 const { expectRevert, time } = require("C:/KingToken/openzeppelin-test-helpers-master");
 const KingToken = artifacts.require('KingToken');
-const StakeHolderFund = artifacts.require('StakeHolderFund');
+const StakeHolderFundTimelock = artifacts.require('StakeHolderFundTimelock');
 
-contract('StakeHolderFund', ([alice, bob, carol, demi, eli, friz, gin,fatboy,max,kero]) => {
+contract('StakeHolderFundTimelock', ([alice, bob, carol, demi,friz]) => {
     
     beforeEach(async () => {
-        //elp 99
-        var elp = [];
-        elp.push({walletAddress:alice,index:1,allocPoint:47,statusActive : true});
-        elp.push({walletAddress:bob,index:2,allocPoint:30,statusActive : true});
-        elp.push({walletAddress:carol,index:3,allocPoint:5,statusActive : true});
-        elp.push({walletAddress:fatboy,index:4,allocPoint:3,statusActive : true});
-        elp.push({walletAddress:friz,index:5,allocPoint:14,statusActive : true});
-        //console.log("this elp length: " + elp.length)
-        //console.log("show me : " + elp);
-        //advisor
-        var adv = [];
-        adv.push({ walletAddress: max,index:1, statusActive:true});
-        adv.push({ walletAddress: eli,index:2, statusActive:true});
 
-        // eTeam
-        var d = [];
-        d.push({ walletAddress: friz,index:1, statusActive:true});
-        d.push({ walletAddress: gin,index:2, statusActive:true});
-        d.push({ walletAddress: fatboy,index:3, statusActive:true});
+
+        // coFounder
+        var cof = [];
+        cof.push({ walletAddress: bob,index:1, statusActive:true});
+        cof.push({ walletAddress: carol,index:2, statusActive:true});
+        cof.push({ walletAddress: demi,index:3, statusActive:true});
+        cof.push({ walletAddress: friz,index:4, statusActive:true});
+
+
         
         
-        var company = demi;
         this.king = await KingToken.new({ from: alice });
      
-        this.stakeholderFund = await StakeHolderFund.new(this.king.address, elp, adv, d, company,kero,{ from: alice });
+        this.stakeholderfundtimelock = await StakeHolderFundTimelock.new(this.king.address, cof, alice,{ from: alice });
+
+        this.withdrawInternal = await this.stakeholderfundtimelock.WITHDRAW_INTERVAL();
+        this.totalWithDrawalAmt = await this.stakeholderfundtimelock.TOTAL_WITHDRAWAL_AMT_PER_INTERVAL();
     });
    
 
@@ -86,24 +79,30 @@ contract('StakeHolderFund', ([alice, bob, carol, demi, eli, friz, gin,fatboy,max
     */
 
 
-    // it('Check if withdraw function fund divided correctly with no balance left', async () => {
-    //     await this.king.mint(this.stakeholderFund.address, '1000000000');
-    //     await this.stakeholderFund.withdraw({from: alice});
-    //     //var result = await this.stakeholderFund.ELPAllocPoint();
-    //     //assert.equal(result.valueOf(), 99);
-    //     //1170/3600 * 1000000000 = 338,888,888.8888889
-    //     assert.equal((await this.king.balanceOf(kero)).valueOf(), '325000000');
-    //     //1500/3600 * 1000000000 * 47/99 = 197,811,447.8
-    //     assert.equal((await this.king.balanceOf(alice)).valueOf(), '197811447');
-        
-    //     assert.equal((await this.king.balanceOf(eli)).valueOf(), '13888888');
-        
-    //     assert.equal((await this.king.balanceOf(gin)).valueOf(), '23148148');
-        
-    //     //assert.equal((await this.king.balanceOf(fatboy)).valueOf(), '8231');
-    //     assert.equal((await this.king.balanceOf(this.stakeholderFund.address)).valueOf(), '0');
-    //     assert.equal((await this.king.balanceOf(demi)).valueOf(), '161111116');
-    // });
+//    it('should revert before lockTime', async () => {
+//     await expectRevert(this.stakeholderfundtimelock.withdraw({ from: alice }), 'king locked');
+//     let lastWithdrawBlock = await this.stakeholderfundtimelock.lastWithdrawBlock();
+//     const unlockBlock = parseInt(lastWithdrawBlock) + parseInt(this.withdrawInternal);
+//     await time.advanceBlockTo(unlockBlock);
+//     await expectRevert(this.stakeholderfundtimelock.withdraw({ from: alice }), 'zero king amount');
+//     await this.king.mint(this.stakeholderfundtimelock.address, '2');
+//     await expectRevert(this.stakeholderfundtimelock.withdraw({ from: alice }), 'king less than allowed withdrawal amount');
+//     await this.king.mint(this.stakeholderfundtimelock.address, '117000000');
+//     await this.stakeholderfundtimelock.withdraw({ from: alice });
+//     const bal1 = await this.king.balanceOf(bob);
+//     assert.equal(bal1.valueOf(), '360000');
+//     lastWithdrawBlock = await this.stakeholderfundtimelock.lastWithdrawBlock();
+//     assert.equal(lastWithdrawBlock.valueOf(), unlockBlock + 5);
+//     const lastWithdrawBlock2 = parseInt(lastWithdrawBlock) + (parseInt(this.withdrawInternal)*2);
+//     await time.advanceBlockTo(lastWithdrawBlock2);
+//     await this.stakeholderfundtimelock.withdraw({ from: alice });
+//     const bal2 = await this.king.balanceOf(bob);
+//     assert.equal(bal2.valueOf(), '1080000');
+//     await expectRevert(this.stakeholderfundtimelock.withdraw({ from: alice }), 'king locked');
+//     lastWithdrawBlock = await this.stakeholderfundtimelock.lastWithdrawBlock();
+//     assert.equal(lastWithdrawBlock.valueOf(), parseInt(lastWithdrawBlock2) + 1);
+    
+// });
 
     
     

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -18,7 +19,7 @@ contract KingToken is Context, IERC20, Ownable {
     uint256 private _totalSupply;
 
     string private _name = "KingToken";
-    string private _symbol = "KING";
+    string private _symbol = "$KING";
     uint8 private _decimals = 18;
 
     /**

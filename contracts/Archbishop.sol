@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -6,7 +7,6 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./KingToken.sol";
-import "./lib/UQ112x112.sol";
 
 interface IMigratorChef {
     // Perform LP token migration from legacy UniswapV2 to KingSwap.
@@ -31,7 +31,6 @@ interface IMigratorChef {
 contract Archbishop is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    using UQ112x112 for uint112;
 
     // Info of each user.
     struct UserInfo {
@@ -67,10 +66,12 @@ contract Archbishop is Ownable {
     uint256 public bonusEndBlock;
     // KING tokens created per block.
     uint256 public kingPerBlock;
+    // Mintage End Bloc
+    uint256 public mintEndBlock;
     // Bonus muliplier for early king makers.
     uint256 public constant BONUS_MULTIPLIER = 10;
     // Bonus block num,about 15 days.
-    uint256 public constant BONUS_BLOCKNUM = 64000;
+    uint256 public constant BONUS_BLOCKNUM = 100000; // testing value = 200 real value = 100000
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorChef public migrator;
 
@@ -104,6 +105,7 @@ contract Archbishop is Ownable {
         kingPerBlock = _kingPerBlock;
         startBlock = _startBlock;
         bonusEndBlock = startBlock.add(BONUS_BLOCKNUM);
+        mintEndBlock = startBlock.add(BONUS_BLOCKNUM);
     }
 
     function poolLength() external view returns (uint256) {
@@ -158,14 +160,20 @@ contract Archbishop is Ownable {
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
-        } else if (_from >= bonusEndBlock) {
-            return _to.sub(_from);
-        } else {
-            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
-                _to.sub(bonusEndBlock)
-            );
+        uint256 _toFinal = _to > mintEndBlock ? mintEndBlock : _to;
+
+        if(_from < mintEndBlock){
+            if (_toFinal <= bonusEndBlock) {
+                return _toFinal.sub(_from).mul(BONUS_MULTIPLIER);
+            } else if (_from >= bonusEndBlock) {
+                return _toFinal.sub(_from);
+            } else {
+                return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
+                    _toFinal.sub(bonusEndBlock)
+                );
+            }
+        }else{
+            return 0;
         }
     }
 
@@ -299,6 +307,22 @@ contract Archbishop is Ownable {
     function stakeholder(address _stakeholderaddress) public {
         require(msg.sender == stakeholderaddress, "stakeholder: wut?");
         stakeholderaddress = _stakeholderaddress;
+    }
+
+    function transferOwnerShipKingToken(address _newOwner) public onlyOwner{
+        king.transferOwnership(_newOwner);
+
+    }
+    //Once change must wait till block no passes Mint End Block
+    function changeMintEndBlock(uint _amount) public onlyOwner{
+        require(block.number >= mintEndBlock, "mint end block has not ended");
+        mintEndBlock = _amount;
+    }
+    //Once change must wait till block no passes Bonus End Block. Please change Bonus End Block first before changing Mint End Block
+    function changeBonusEndBlock(uint _amount) public onlyOwner{
+        require(block.number >= bonusEndBlock, "bonus end block has not ended");
+        require(block.number >= mintEndBlock, "mint end block has not ended");
+        bonusEndBlock = _amount;
     }
 
 
