@@ -152,7 +152,7 @@ contract StakeHolderFund is Ownable {
     }
 
     //calculate total allocation point
-    function ELPAllocPoint() internal returns(uint) {
+    function ELPAllocPoint() internal view returns(uint) {
         uint totalAllocPoint = 0;
         for(uint i = 0 ;i < elpArray.length; i++){
             //calculate only for wallet with active status.
@@ -164,7 +164,7 @@ contract StakeHolderFund is Ownable {
     }
 
     //Anyone can call it but it will be split to only the people in this address.
-    function withdraw() public {
+    function withdraw() public onlyOwner{
         uint _amount = king.balanceOf(address(this));
         require(_amount > 0, "zero king amount");
         uint amountReal = _amount;

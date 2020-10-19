@@ -74,7 +74,7 @@ contract StakeHolderFundTimeLock is Ownable {
     }
 
     //Anyone can call it but it will be split to only the people in this address.
-    function withdraw() public {
+    function withdraw() public onlyOwner{
         uint unlockBlock = lastWithdrawBlock.add(WITHDRAW_INTERVAL);
         require(block.number >= unlockBlock, "king locked");
         uint _amount = king.balanceOf(address(this));
